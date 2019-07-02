@@ -1,5 +1,5 @@
-function [window_lake_sfc,window_lake_btm] = is2_sfc_detect_sub(elev_bin, class_bin)
-% A subroutine for autoatm4.m, designed to chunk the data and better
+function [window_lake_sfc,window_lake_btm] = is2_sfc_detect_sub(elev_bin,class_bin,elev_bin06,snr_bin06)
+% A subroutine for autoatl.m, designed to chunk the data and better
 % identify lake surfaces/bottoms in ATM data
 
 addpath(genpath('/Users/zhfair/Documents/'))
@@ -16,9 +16,14 @@ elev_bin = round(elev_bin, 3);
 % Chunking
 for k = 1:15
     [n_hist, ~, elev_chunk,bound_range] = is2_chunking_sub(elev_bin, k);
+    [snr_chunk06,elev_chunk06,bound_range06] = atl06_chunking_sub(elev_bin06,snr_bin06,k);
     perc = prctile(n_hist,1:100);
     [~,index] = min(abs(perc' - 1200));
+   
+    % Convert SNR to decibels
+    snr_chunk06 = 10*log(snr_chunk06);
     
+
     % Sorting chunked data by frequency of occurrence
     [~,~,subs] = unique(elev_chunk);
     freq = accumarray(subs,subs,[],@numel);
