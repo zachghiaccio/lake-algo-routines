@@ -15,31 +15,34 @@ catch
 end
 
 % Beam Data (csb = Central strong beam, cwb = Central weak beam)
-time_csb = h5read(fname_atll03, '/gt1l/heights/delta_time');
-elev_csb = h5read(fname_atll03, '/gt1l/heights/h_ph');
-lat_csb = h5read(fname_atll03, '/gt1l/heights/lat_ph');
-lon_csb = h5read(fname_atll03, '/gt1l/heights/lon_ph');
+time_csb = h5read(fname_atll03, '/gt2l/heights/delta_time');
+elev_csb = h5read(fname_atll03, '/gt2l/heights/h_ph');
+lat_csb = h5read(fname_atll03, '/gt2l/heights/lat_ph');
+lon_csb = h5read(fname_atll03, '/gt2l/heights/lon_ph');
+dist = h5read(fname_atll03, '/gt2l/heights/dist_ph_along'); % In meters
+seglen = h5read(fname_atll03, '/gt2l/geolocation/segment_length'); % Only used to properly convert dist
 
-time06 = h5read(fname_atl06, '/gt1l/land_ice_segments/delta_time');
-elev06 = h5read(fname_atl06, '/gt1l/land_ice_segments/h_li');
-lat06 = h5read(fname_atl06, '/gt1l/land_ice_segments/latitude');
-lon06 = h5read(fname_atl06, '/gt1l/land_ice_segments/longitude');
-snr06 = h5read(fname_atl06, '/gt1l/land_ice_segments/fit_statistics/snr');
-dist06 = h5read(fname_atl06, '/gt1l/land_ice_segments/ground_track/x_atc');
+time06 = h5read(fname_atl06, '/gt2l/land_ice_segments/delta_time');
+elev06 = h5read(fname_atl06, '/gt2l/land_ice_segments/h_li');
+lat06 = h5read(fname_atl06, '/gt2l/land_ice_segments/latitude');
+lon06 = h5read(fname_atl06, '/gt2l/land_ice_segments/longitude');
+snr06 = h5read(fname_atl06, '/gt2l/land_ice_segments/fit_statistics/snr');
+dist06 = h5read(fname_atl06, '/gt2l/land_ice_segments/ground_track/x_atc');
 
 % Removing surface type classification, filler values
-class_csb = h5read(fname_atll03, '/gt1l/heights/signal_conf_ph');
+class_csb = h5read(fname_atll03, '/gt2l/heights/signal_conf_ph');
 class_consol_csb = is2_class_merge(class_csb);
 snr06(snr06 > 1e6) = NaN;
 snr06 = 10*log(snr06); % Convert to dBZ
 elev06(elev06 > 1e6) = NaN;
 
-dist = ((1:length(elev_csb)).*0.7)./1000; % ATL03 Along track distance in km
-
-% Converting time relative to start of track
+% Converting time, distance relative to start of track
 for j = 1:length(time_csb)
     delta_time_csb(j) = time_csb(j) - time_csb(1);
 end
+
+total_dist = sum(seglen) + dist(end);
+dist_corrected = linspace(0,total_dist, length(dist))./1000; % Also convert to km
 
 % Separating the data into multiple windows; will need to be updated
 % according to the length of each data granule
@@ -50,7 +53,7 @@ window_size06 = floor(length(elev06)/25);
 window_count06 = ceil(length(elev06)/window_size_csb);
 
 for j = 1:window_count_csb
-    [lat_bin_csb,lon_bin_csb,time_bin_csb,elev_bin_csb,class_bin_csb,dist_bin] = is2_windowing_sub(lat_csb,lon_csb,delta_time_csb,elev_csb,class_consol_csb,dist,window_size_csb,j);
+    [lat_bin_csb,lon_bin_csb,time_bin_csb,elev_bin_csb,class_bin_csb,dist_bin] = is2_windowing_sub(lat_csb,lon_csb,delta_time_csb,elev_csb,class_consol_csb,dist_corrected,window_size_csb,j);
     [lat_bin06,lon_bin06,time_bin06,elev_bin06,snr_bin06,dist_bin06] = atl06_windowing_sub(lat06,lon06,time06,elev06,snr06,dist06,window_size06,j);
     
 
@@ -168,12 +171,12 @@ for j = 1:window_count_csb
     
     if any(lake_sfc_mean)
         figure;
-        plot(lon_bin_csb, high_bin_csb, '.', 'MarkerSize', 2, 'Color', rgb('sky blue'))
-        hold on; plot(lon_bin_csb, lake_sfc_mean, '.', 'MarkerSize', 2, 'Color', rgb('green'))
-        plot(lon_bin_csb, lake_btm_fitted, 'LineWidth', 2, 'Color', rgb('rose'))
-        plot(lon_bin_csb, lake_btm_max, '.', 'MarkerSize', 2)
-        plot(lon_bin_csb(marked_int), depth_marker, 'r*', 'MarkerSize',12)
-        xlabel('Longitude', 'FontSize',14, 'FontWeight','bold');
+        plot(dist_bin, high_bin_csb, '.', 'MarkerSize', 2, 'Color', rgb('sky blue'))
+        hold on; plot(dist_bin, lake_sfc_mean, '.', 'MarkerSize', 2, 'Color', rgb('green'))
+        plot(dist_bin, lake_btm_fitted, 'LineWidth', 2, 'Color', rgb('rose'))
+        plot(dist_bin, lake_btm_max, '.', 'MarkerSize', 2)
+        plot(dist_bin(marked_int), depth_marker, 'r*', 'MarkerSize',12)
+        xlabel('Along-track distance [km]', 'FontSize',14, 'FontWeight','bold');
         ylabel('Elevation [m]', 'FontSize',14, 'FontWeight','bold')
         legend('Raw', 'Polyfit Bed', 'Signal Surface', 'Signal Bed', 'Max Depth')
         %keyboard
