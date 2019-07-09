@@ -52,22 +52,28 @@ window_count_csb = ceil(length(elev_csb)/window_size_csb);
 window_size06 = floor(length(elev06)/25);
 window_count06 = ceil(length(elev06)/window_size_csb);
 
+%% Lake Surface-Bed Separation
 for j = 1:window_count_csb
+    % Windowing Subroutines
     [lat_bin_csb,lon_bin_csb,time_bin_csb,elev_bin_csb,class_bin_csb,dist_bin] = is2_windowing_sub(lat_csb,lon_csb,delta_time_csb,elev_csb,class_consol_csb,dist_corrected,window_size_csb,j);
     [lat_bin06,lon_bin06,time_bin06,elev_bin06,snr_bin06,dist_bin06] = atl06_windowing_sub(lat06,lon06,time06,elev06,snr06,dist06,window_size06,j);
-    
-
     high_bin_csb = elev_bin_csb;
     high_bin_csb(class_bin_csb~=4) = NaN;
-    [window_lake_sfc, window_lake_btm] = is2_sfc_detect_sub(high_bin_csb,class_bin_csb,elev_bin06,snr_bin06);
+    
+    % Surface-/Bed-Finding Subroutines 
+    window_lake_sfc = is2_sfc_detect_sub(high_bin_csb,class_bin_csb,elev_bin06,snr_bin06);
+    [~,window_lake_btm,lake_btm_mean,lake_btm_error] = is2_ph_dist(dist_bin,high_bin_csb);
+    
+    % Lake Bounds
     lake_start = find(~isnan(window_lake_sfc), 1, 'first');
     lake_end = find(~isnan(window_lake_sfc), 1, 'last');
     
-    
-    window_lake_btm(lake_start) = window_lake_sfc(lake_start); % Boundary conditions
+    % Boundary conditions
+    window_lake_btm(lake_start) = window_lake_sfc(lake_start); 
     window_lake_btm(lake_end) = window_lake_sfc(lake_end);
     lat_lake_start03 = lat_bin_csb(lake_start);
     lat_lake_end03 = lat_bin_csb(lake_end);
+    
     if ~isempty(lake_start)
         lake_start06 = find(round(lat06,3) == round(lat_lake_start03,3),1,'first');
         lake_end06 = find(round(lat06,3) == round(lat_lake_end03,3),1,'last');
@@ -77,89 +83,62 @@ for j = 1:window_count_csb
         lake_range = -9999; % Filler value to stop polyfitting
     end
     
+    % Filtering Statistics
     lake_sfc_mean = movmean(window_lake_sfc, 1600, 'omitnan');
-    lake_btm_max = movmax(window_lake_btm, 1600, 'omitnan');
     high_bin_mean = movmean(high_bin_csb, 3000, 'omitnan');
     high_bin_std = movstd(high_bin_csb, 10000, 'omitnan');
-    number_of_btm_nans = movsum(~isnan(lake_btm_max),3000,'omitnan');
+    number_of_btm_nans = movsum(~isnan(lake_btm_mean),3000,'omitnan');
     
     for k = 1:length(window_lake_sfc)
-        if k < lake_start
-            %lake_btm_fitted(k) = NaN;
+        if k < lake_start % Remove points before start of lake
             lake_sfc_mean(k) = NaN;
-            lake_btm_max(k) = NaN;
-        elseif k > lake_end
-            %lake_btm_fitted(k) = NaN;
+            lake_btm_mean(k) = NaN;
+        elseif k > lake_end % Remove points after end of lake
             lake_sfc_mean(k) = NaN;
-            lake_btm_max(k) = NaN;
-        elseif high_bin_mean(k) > lake_sfc_mean(k)
-            %lake_btm_fitted(k) = NaN;
+            lake_btm_mean(k) = NaN;
+        elseif high_bin_mean(k) > lake_sfc_mean(k) % Remove points above lake
             lake_sfc_mean(k) = NaN;
-            lake_btm_max(k) = NaN;
-        elseif lake_sfc_mean(k)-lake_btm_max(k) < 1
-            %lake_btm_fitted(k) = NaN;
+            lake_btm_mean(k) = NaN;
+        elseif lake_sfc_mean(k)-lake_btm_mean(k) < 1 % Remove shallow points
             lake_sfc_mean(k) = NaN;
-            lake_btm_max(k) = NaN;
-        elseif number_of_btm_nans(k) < 1800
-            %lake_btm_fitted(k) = NaN;
-            lake_btm_max(k) = NaN;
+            lake_btm_mean(k) = NaN;
+        elseif number_of_btm_nans(k) < 1800 % Remove small false positives
+            lake_btm_mean(k) = NaN;
             lake_sfc_mean(k) = NaN;
-        elseif high_bin_std(k) >= 2.1
-            %lake_btm_fitted(k) = NaN;
-            lake_btm_max(k) = NaN;
+        elseif high_bin_std(k) >= 2.1 % Remove points on rough surfaces
+            lake_btm_mean(k) = NaN;
             lake_sfc_mean(k) = NaN;
         end
     end
-    lake_btm_max(lake_start) = lake_sfc_mean(lake_start);
-    lake_btm_max(lake_end) = lake_sfc_mean(lake_end);
+    lake_btm_mean(lake_start) = lake_sfc_mean(lake_start);
+    lake_btm_mean(lake_end) = lake_sfc_mean(lake_end);
     
-    % Further filtering, for cleanliness
-    if lake_btm_max(lake_start+1)-lake_btm_max(lake_start) < -1
-        lake_btm_max(lake_start) = NaN;
-    elseif lake_btm_max(lake_end)-lake_btm_max(lake_end-1) > 1
-        lake_btm_max(lake_end) = NaN;
+    % Filtering and the start and end points
+    if lake_btm_mean(lake_start+1)-lake_btm_mean(lake_start) < -1
+        lake_btm_mean(lake_start) = NaN;
+    elseif lake_btm_mean(lake_end)-lake_btm_mean(lake_end-1) > 1
+        lake_btm_mean(lake_end) = NaN;
     end
     
     % Polynomial Fitting, with lake endpoints as boundary
     % conditions
     lake_btm_fitted = is2_polyfit_sub(lon_bin_csb,window_lake_btm);
-    
-%     if lake_start == 1 % If lake is at beginning of data file
-%         idx = isnan(lake_btm_max);
-%         [p,~,mu] = polyfit(lon_bin_csb(~idx), window_lake_btm(~idx), 3);
-%         lake_btm_fitted = polyval(p, lon_bin_csb, [], mu);
-%     elseif any(length(high_bin_csb)-10:length(high_bin_csb) == lake_end) % If lake is at end of data file
-%         idx = isnan(window_lake_btm);
-%         [p,~,mu] = polyfit(lon_bin_csb(~idx), window_lake_btm(~idx), 3);
-%         lake_btm_fitted = polyval(p, lon_bin_csb, [], mu);
-%     else
-%         idx = isnan(window_lake_btm);
-%         p = polyfix(lon_bin_csb(~idx),window_lake_btm(~idx), 3, ...
-%             [lon_bin_csb(lake_start) lon_bin_csb(lake_end)], ...
-%             [window_lake_sfc(lake_start) window_lake_sfc(lake_end)]);
-%         lake_btm_fitted = polyval(p, lon_bin_csb);
-%     end
-    
-%     for k = 1:length(lake_btm_fitted)
-%         if k<lake_start | k>lake_end
-%             lake_btm_fitted(k) = NaN;     
-%         end
-%     end
 
     % Filtering the polyfit curves to look nicer
     lake_btm_fitted(isnan(window_lake_sfc)) = NaN;
     
+    % Lake depth estimates
     sfc_btm_diff_polyfit = lake_sfc_mean - lake_btm_fitted;
     lake_depth_polyfit = max(sfc_btm_diff_polyfit(lake_start:lake_end));
-    sfc_btm_diff_means = lake_sfc_mean - lake_btm_max;
+    sfc_btm_diff_means = lake_sfc_mean - lake_btm_mean;
     lake_depth_means = max(sfc_btm_diff_means(lake_start:lake_end));
     mean_depth = mean([lake_depth_means lake_depth_polyfit]);
     
-    
+    % Depth markers for plots
     try
         if lake_depth_means > lake_depth_polyfit
             marked_int = find(sfc_btm_diff_means==lake_depth_means, 1, 'first');
-            depth_marker = lake_btm_max(marked_int);
+            depth_marker = lake_btm_mean(marked_int);
         elseif lake_depth_polyfit > lake_depth_means
             marked_int = find(sfc_btm_diff_polyfit==lake_depth_polyfit, 1, 'first');
             depth_marker = lake_btm_fitted(marked_int);
@@ -169,43 +148,19 @@ for j = 1:window_count_csb
         lake_depth_polyfit = NaN;
     end
     
+    % Plotting
     if any(lake_sfc_mean)
         figure;
         plot(dist_bin, high_bin_csb, '.', 'MarkerSize', 2, 'Color', rgb('sky blue'))
         hold on; plot(dist_bin, lake_sfc_mean, '.', 'MarkerSize', 2, 'Color', rgb('green'))
         plot(dist_bin, lake_btm_fitted, 'LineWidth', 2, 'Color', rgb('rose'))
-        plot(dist_bin, lake_btm_max, '.', 'MarkerSize', 2)
+        plot(dist_bin, lake_btm_mean, 'LineWidth', 2)
         plot(dist_bin(marked_int), depth_marker, 'r*', 'MarkerSize',12)
         xlabel('Along-track distance [km]', 'FontSize',14, 'FontWeight','bold');
         ylabel('Elevation [m]', 'FontSize',14, 'FontWeight','bold')
-        legend('Raw', 'Polyfit Bed', 'Signal Surface', 'Signal Bed', 'Max Depth')
-        %keyboard
+        legend('Raw', 'Signal Surface', 'Polyfit Bed', 'Signal Bed', 'Max Depth')
         pause; close all;
     end
     
-    
-%     elev_signal_high_csb = elev_bin_csb; elev_noise_csb = elev_bin_csb;
-%     elev_signal_high_csb(class_bin_csb~=4) = NaN;
-%     elev_noise_csb(class_bin_csb~=0) = NaN;
-%     
-%     % SNR Computation
-%     time_bin_csb_interval = time_bin_csb(end)/420;
-%     for k = 1:420
-%         signal_high_count_csb(k) = length(elev_signal_high_csb(~isnan(elev_signal_high_csb) & time_bin_csb'<time_bin_csb_interval*k & time_bin_csb'>=time_bin_csb_interval*(k-1)));
-%         noise_count_csb(k) = length(elev_noise_csb(~isnan(elev_noise_csb) & time_bin_csb'<time_bin_csb_interval*k & time_bin_csb'>=time_bin_csb_interval*(k-1)));
-%     end
-%     
-%     figure;
-%     subplot(1,2,1)
-%     plot(signal_high_count_csb, 'LineWidth', 2)
-%     hold on; plot(noise_count_csb, 'LineWidth', 2)
-%     subplot(1,2,2)
-%     histogram(elev_signal_high_csb)
-%     
-%     figure;
-%     plot(elev_signal_high_csb, '.', 'MarkerSize', 2)
-%     hold on; plot(elev_noise_csb, 'r.', 'MarkerSize', 2)
-%     pause; close all
-     clear('signal_high_count_csb', 'noise_count_csb')
 end
    
