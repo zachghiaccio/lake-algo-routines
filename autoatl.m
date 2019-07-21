@@ -22,6 +22,11 @@ lon_csb = h5read(fname_atll03, '/gt2l/heights/lon_ph');
 dist = h5read(fname_atll03, '/gt2l/heights/dist_ph_along'); % In meters
 seglen = h5read(fname_atll03, '/gt2l/geolocation/segment_length'); % Only used to properly convert dist
 
+theta_elev = h5read(fname_atll03, '/gt2l/geolocation/ref_elev');
+theta_elev(theta_elev>2*pi) = NaN;
+theta_elev_mean = nanmean(theta_elev); % Elevation angle change is small
+theta_inc = pi/2 - theta_elev_mean; % Incidence angle, for refraction correction
+
 time06 = h5read(fname_atl06, '/gt2l/land_ice_segments/delta_time');
 elev06 = h5read(fname_atl06, '/gt2l/land_ice_segments/h_li');
 lat06 = h5read(fname_atl06, '/gt2l/land_ice_segments/latitude');
@@ -37,8 +42,8 @@ snr06 = 10*log(snr06); % Convert to dBZ
 elev06(elev06 > 1e6) = NaN;
 
 lake_count = 0;
-indyplot = 1;
-multiplot = 0;
+indyplot = 0;
+multiplot = 1;
 
 % Converting time, distance relative to start of track
 for j = 1:length(time_csb)
@@ -126,28 +131,45 @@ for j = 1:window_count_csb
     
     %% Refined guess for the lake surface, bottom
     [window_lake_sfc_corr,lake_sfc_mean_corr,~,lake_sfc_slope] = is2_sfc_find(dist_bin,high_bin_csb,window_lake_sfc);
-    %[~,window_lake_btm_corr,lake_btm_mean_corr,lake_btm_error_corr] = is2_ph_dist(dist_bin,high_bin_csb);
     
-    %lake_btm_mean_corr(lake_sfc_mean_corr-lake_btm_mean_corr<=1) = NaN;
+    
+    % Lake depth estimates
+    sfc_btm_diff_means = lake_sfc_mean - lake_btm_mean;
+    lake_depth_means = max(sfc_btm_diff_means(lake_start:lake_end));
+    
+    % Refraction Correction
+    [dist_bin_corr,signal_depth_corr,dz] = depth_refrac_fix(dist_bin,sfc_btm_diff_means,theta_inc);
+    window_lake_btm_corr = window_lake_btm + dz;
+    
+    lake_btm_mean_corr = movmean(window_lake_btm,3000,'omitnan');
+    for i = 2:length(lake_btm_mean_corr)
+        if abs(lake_btm_mean_corr(i)-lake_btm_mean_corr(i-1))>0.2
+            lake_btm_mean_corr(i) = NaN;
+        end
+    end
+    
     
     % Polynomial Fitting, with lake endpoints as boundary
     % conditions
     lake_btm_fitted = is2_polyfit_sub(lon_bin_csb,window_lake_btm);
 
-    % Filtering the polyfit curves to look nicer
+    % Filtering and correction of polynomial
     lake_btm_fitted(isnan(window_lake_sfc)) = NaN;
+    lake_btm_fitted = lake_btm_fitted + dz;
+    lake_btm_fitted(lake_btm_fitted>lake_sfc_mean) = NaN;
+    idx = (high_bin_csb == window_lake_btm);
+    high_bin_csb(idx) = high_bin_csb(idx) + dz(idx);
     
-    % Lake depth estimates
     sfc_btm_diff_polyfit = lake_sfc_mean - lake_btm_fitted;
-    lake_depth_polyfit = max(sfc_btm_diff_polyfit(lake_start:lake_end));
-    sfc_btm_diff_means = lake_sfc_mean - lake_btm_mean;
-    lake_depth_means = max(sfc_btm_diff_means(lake_start:lake_end));
-    mean_depth = mean([lake_depth_means lake_depth_polyfit]);
+    lake_depth_polyfit = max(sfc_btm_diff_polyfit(lake_start:lake_end)); % Fitted depth
+    
+    disp(['Signal Depth: ', num2str(max(signal_depth_corr)), ' m'])
+    disp(['Polynomial Depth: ', num2str(max(lake_depth_polyfit)), ' m'])
     
     % Depth markers for plots
     try
         if lake_depth_means > lake_depth_polyfit
-            marked_int = find(sfc_btm_diff_means==lake_depth_means, 1, 'first');
+            marked_int = find(sfc_btm_diff_means+dz==max(signal_depth_corr), 1, 'first');
             depth_marker = lake_btm_mean(marked_int);
         elseif lake_depth_polyfit > lake_depth_means
             marked_int = find(sfc_btm_diff_polyfit==lake_depth_polyfit, 1, 'first');
@@ -168,7 +190,7 @@ for j = 1:window_count_csb
             plot(dist_bin, high_bin_csb, '.', 'MarkerSize', 6, 'Color', rgb('sky blue'))
             hold on; plot(dist_bin, lake_sfc_mean_corr, 'LineWidth', 2, 'Color', rgb('green'))
             plot(dist_bin, lake_btm_fitted, 'LineWidth', 2, 'Color', rgb('rose'))
-            plot(dist_bin, lake_btm_mean, 'b', 'LineWidth', 2)
+            plot(dist_bin_corr, lake_btm_mean_corr, 'b', 'LineWidth', 2)
             plot(dist_bin(marked_int), depth_marker, 'r*', 'MarkerSize',12)
             xlabel('Along-track distance [km]', 'FontSize',14, 'FontWeight','bold');
             ylabel('Elevation [m]', 'FontSize',14, 'FontWeight','bold')
@@ -178,60 +200,66 @@ for j = 1:window_count_csb
             
             if lake_count == 2
                 x = 445797:473763;
+                marked_int = 461876; depth_marker = lake_btm_mean_corr(marked_int);
                 subplot(2,2,1)
                 plot(dist_bin(x), high_bin_csb(x), '.', 'MarkerSize', 3, 'color', rgb('sky blue'))
                 hold on; plot(dist_bin(x),lake_sfc_mean_corr(x),'LineWidth',2,'color',rgb('green'))
                 plot(dist_bin(x), lake_btm_fitted(x), 'LineWidth', 2, 'Color', rgb('rose'))
-                plot(dist_bin(x), lake_btm_mean(x), 'b', 'LineWidth', 2)
+                plot(dist_bin_corr(x), lake_btm_mean_corr(x), 'b', 'LineWidth', 2)
                 plot(real(dist_bin(marked_int)), depth_marker, 'r*', 'MarkerSize',12)
                 xlim([min(dist_bin(x)) max(dist_bin(x))])
                 ylim([min(high_bin_csb(x))-2 max(high_bin_csb(x))])
                 
-                %depth_marker = min(lake_btm_fitted(x),[],'omitnan');
-                disp(nanmean(lake_sfc_mean_corr(x))-depth_marker)
+                marked_int = find(lake_btm_fitted==min(lake_btm_fitted(x),[],'omitnan'));
+                disp(dz(marked_int))
+                disp(nanmean(lake_sfc_mean_corr)-lake_btm_mean_corr(marked_int))
             elseif lake_count == 4
                 subplot(2,2,2)
                 x = 131034:203691;
+                marked_int = 188177; depth_marker = lake_btm_mean_corr(marked_int);
                 plot(dist_bin(x), high_bin_csb(x), '.', 'MarkerSize', 3, 'color', rgb('sky blue'))
                 hold on; plot(dist_bin(x),lake_sfc_mean_corr(x),'LineWidth',2,'color',rgb('green'))
                 plot(dist_bin(x), lake_btm_fitted(x), 'LineWidth', 2, 'Color', rgb('rose'))
-                plot(dist_bin(x), lake_btm_mean(x), 'b', 'LineWidth', 2)
+                plot(dist_bin_corr(x), lake_btm_mean_corr(x), 'b', 'LineWidth', 2)
                 plot(real(dist_bin(marked_int)), depth_marker, 'r*', 'MarkerSize',12)
                 xlim([min(dist_bin(x)) max(dist_bin(x))])
                 ylim([min(high_bin_csb(x))-2 max(high_bin_csb(x))])
                 
-                %depth_marker = min(lake_btm_fitted(x),[],'omitnan');
-                disp(nanmean(lake_sfc_mean_corr(x))-depth_marker)
+                marked_int = find(lake_btm_fitted==min(lake_btm_fitted(x),[],'omitnan'));
+                disp(dz(marked_int))
+                disp(nanmean(lake_sfc_mean_corr(x))-lake_btm_mean_corr(marked_int))
                 subplot(2,2,3)
                 x = 251643:291204;
                 lake_sfc_mean_corr(251643:271258) = NaN;
                 lake_btm_mean(251643:271258) = NaN;
-                marked_int = 279070; depth_marker = lake_btm_mean(marked_int);
+                marked_int = 279070; depth_marker = lake_btm_mean_corr(marked_int);
                 plot(dist_bin(x), high_bin_csb(x), '.', 'MarkerSize', 3, 'color', rgb('sky blue'))
                 hold on; plot(dist_bin(x),lake_sfc_mean_corr(x),'LineWidth',2,'color',rgb('green'))
                 plot(dist_bin(x), lake_btm_fitted(x), 'LineWidth', 2, 'Color', rgb('rose'))
-                plot(dist_bin(x), lake_btm_mean(x), 'b', 'LineWidth', 2)
+                plot(dist_bin_corr(x), lake_btm_mean_corr(x), 'b', 'LineWidth', 2)
                 plot(real(dist_bin(marked_int)), depth_marker, 'r*', 'MarkerSize',12)
                 xlim([min(dist_bin(x)) max(dist_bin(x))])
                 ylim([min(high_bin_csb(x))-2 max(high_bin_csb(x))])
                 
-                %depth_marker = min(lake_btm_fitted(x),[],'omitnan');
-                disp(nanmean(lake_sfc_mean_corr(x))-depth_marker)
+                marked_int = find(lake_btm_fitted==min(lake_btm_fitted(x),[],'omitnan'));
+                disp(dz(marked_int))
+                disp(nanmean(lake_sfc_mean_corr(x))-lake_btm_mean_corr(marked_int))
                 subplot(2,2,4)
                 x = 326860:371236;
                 lake_sfc_mean_corr(348647:371236) = NaN;
                 lake_btm_mean(348647:371236) = NaN;
-                marked_int = 333702; depth_marker = lake_btm_mean(marked_int);
+                marked_int = 333702; depth_marker = lake_btm_mean_corr(marked_int);
                 plot(dist_bin(x), high_bin_csb(x), '.', 'MarkerSize', 3, 'color', rgb('sky blue'))
                 hold on; plot(dist_bin(x),lake_sfc_mean_corr(x),'LineWidth',2,'color',rgb('green'))
                 plot(dist_bin(x), lake_btm_fitted(x), 'LineWidth', 2, 'Color', rgb('rose'))
-                plot(dist_bin(x), lake_btm_mean(x), 'b', 'LineWidth', 2)
+                plot(dist_bin_corr(x), lake_btm_mean_corr(x), 'b', 'LineWidth', 2)
                 plot(real(dist_bin(marked_int)), depth_marker, 'r*', 'MarkerSize',12)
                 xlim([min(dist_bin(x)) max(dist_bin(x))])
                 ylim([min(high_bin_csb(x))-2 max(high_bin_csb(x))])
+                disp(dz(marked_int))
                 
-                %depth_marker = min(lake_btm_fitted(x),[],'omitnan');
-                disp(nanmean(lake_sfc_mean_corr(x))-depth_marker)
+                marked_int = find(lake_btm_fitted==min(lake_btm_fitted(x),[],'omitnan'));
+                disp(nanmean(lake_sfc_mean_corr(x))-lake_btm_mean_corr(marked_int))
                 pause;
             end
         end
