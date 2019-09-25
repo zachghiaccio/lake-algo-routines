@@ -1,11 +1,9 @@
-function [window_lake_sfc] = is2_sfc_detect_sub(elev_bin,class_bin,elev_bin06,snr_bin06)
+function [window_lake_sfc] = is2_sfc_detect_sub(elev_bin)
 % A subroutine for autoatl.m, designed to chunk the data and better
 % identify lake surfaces in IS2 data. Bottom finding is now relegated to
 % is2_ph_dist.m
 
 addpath(genpath('/Users/zhfair/Documents/'))
-
-plotting = 0; % Yes=1, No=0
 
 % Elevation window information
 window_lake_sfc = NaN(length(elev_bin),1);
@@ -14,13 +12,8 @@ elev_bin = round(elev_bin, 3);
 %% Chunking
 for k = 1:15
     [n_hist, ~, elev_chunk,bound_range] = is2_chunking_sub(elev_bin, k);
-    [snr_chunk06,~,~] = atl06_chunking_sub(elev_bin06,snr_bin06,k);
     perc = prctile(n_hist,1:100);
     [~,index] = min(abs(perc' - 1200));
-   
-    % Convert SNR to decibels
-    snr_chunk06 = 10*log(snr_chunk06);
-    
 
     % Sorting chunked data by frequency of occurrence
     [~,~,subs] = unique(elev_chunk);
@@ -50,28 +43,6 @@ for k = 1:15
         window_lake_sfc(bound_range) = elev_chunk_sfc;
         window_lake_sfc( (movstd(elev_chunk,1600,'omitnan')<0.71)+bound_range(1) ) = NaN;
         
-        % Signal/Noise Count Tests
-        class_chunk = class_bin(bound_range);
-        high_count = sum(class_chunk == 4);
-        lower_count = sum(class_chunk==3 | class_chunk==2);
-        noise_count = sum(class_chunk == 0);
-        %disp(['High SNR: ', num2str(high_count./(high_count + noise_count))])
-        %disp(['Lower SNR: ', num2str(lower_count./(lower_count + noise_count))])
-        
-        % Non-surface data points, for debugging
-        non_surface = elev_chunk;
-        non_surface(non_surface<std_bound_upper & non_surface>std_bound_lower) = NaN;
-        
-        if plotting && ~isnan(window_lake_sfc(bound_range)) %For debigging and testing purposes
-            figure;
-            histogram(elev_chunk)
-            
-            figure;
-            hold on;
-            plot(1:length(elev_chunk), non_surface, '.')
-            plot(1:length(elev_chunk),elev_chunk_sfc, '.')
-            pause; close all
-        end
     end
 end
 
