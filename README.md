@@ -28,4 +28,6 @@ is2_ph_dist.m - Uses photon refinement procedures (see Smith et al., 2019 for mo
 
 is2_polyfit_sub.m - Adds a 3rd-order polynomial curve to lake beds, to fill the gaps in attenuated regions. A separate subroutine was needed to account for multiple lakes in a scene.
 
+depth_refrac_fix.m - Corrects lake depth retrievals for the refractive index of water. See Parrish et al., (2019) for more details.
+
 manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine.
