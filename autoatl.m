@@ -8,11 +8,11 @@ clear; clc
 % ----------------------------------------------------------------------- %
 
 % Call data - needs to be updated once larger data volumes are available
-fname_atll03 = 'ATL03_20190102184312_00810210_001_01.h5';
+fname_atll03 = 'ATL03_20190617064249_12220303_002_01.h5';
 
 % Plotting Booleans
-indyplot = 0;
-multiplot = 1;
+indyplot = 1;
+multiplot = 0;
 
 % Number of windows per granule
 window_number = 25;
@@ -43,13 +43,13 @@ lake_count = 0;
 % Lake Surface-Bed Separation
 for j = 1:window_count
     %% Windowing Subroutines
-    [lat_bin,lon_bin,time_bin,elev_bin,class_bin,dist_bin] = is2_windowing_sub(lat,lon,delta_time,elev,class_consol,dist_corrected,window_size,j);
+    [lat_bin,lon_bin,elev_bin,class_bin,dist_bin] = is2_windowing_sub(lat,lon,elev,class_consol,dist_corrected,window_size,j);
     high_bin = elev_bin; sig_bin = elev_bin;
     high_bin(class_bin~=4) = NaN; % High-confidence photons only
     sig_bin(class_bin<1) = NaN; % High/medium/low/buffer photons
     
     %% Surface-/Bed-Finding Subroutines 
-    window_lake_sfc = is2_sfc_detect_sub(high_bin,class_bin);
+    window_lake_sfc = is2_sfc_detect_sub(high_bin);
     [~,window_lake_btm,lake_btm_mean,lake_btm_error] = is2_ph_dist(dist_bin,high_bin);
     
     % Lake Bounds
@@ -150,7 +150,7 @@ for j = 1:window_count
             hold on; plot(dist_bin, lake_sfc_mean_corr, 'LineWidth', 2, 'Color', rgb('green'))
             plot(dist_bin, lake_btm_fitted, 'LineWidth', 2, 'Color', rgb('rose'))
             plot(dist_bin_corr, lake_btm_mean_corr, 'b', 'LineWidth', 2)
-            plot(dist_bin(marked_int), depth_marker, 'r*', 'MarkerSize',12)
+            %plot(dist_bin(marked_int), depth_marker, 'r*', 'MarkerSize',12)
             xlabel('Along-track distance [km]', 'FontSize',14, 'FontWeight','bold');
             ylabel('Elevation [m]', 'FontSize',14, 'FontWeight','bold')
             legend('Raw', 'Signal Surface', 'Polyfit Bed', 'Signal Bed', 'Max Depth')
