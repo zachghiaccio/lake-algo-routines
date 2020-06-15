@@ -24,10 +24,12 @@ is2_chunking_sub.m - The "chunking" subroutine for ATL03. Breaks an ATL03 window
 
 is2_sfc_detect_sub.m - Uses the chunked data to find lake surfaces. An initial guess is also given for the lake bed.
 
+is2_sfc_find.m - Gives a second guess for the location of a lake surface. Currently has issues with smaller lakes seen on Greenland.
+
 is2_ph_dist.m - Uses photon refinement procedures (see Smith et al., 2019 for more details) to improve lake bed estimation. 
 
 is2_polyfit_sub.m - Adds a 3rd-order polynomial curve to lake beds, to fill the gaps in attenuated regions. A separate subroutine was needed to account for multiple lakes in a scene.
 
 depth_refrac_fix.m - Corrects lake depth retrievals for the refractive index of water. See Parrish et al., (2019) for more details.
 
-manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine.
+manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine. Surface refinement is currently buggy, but the initial guess is sufficient for most cases.
