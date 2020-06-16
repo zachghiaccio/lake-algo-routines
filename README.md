@@ -38,6 +38,25 @@ is2_polyfit_sub.m - Adds a 3rd-order polynomial curve to lake beds, to fill the 
 
 depth_refrac_fix.m - Corrects lake depth retrievals for the refractive index of water. See Parrish et al., (2019) for more details.
 
-manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine. Surface refinement is currently buggy, but the initial guess is sufficient for most cases.
+manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine. Recommended if the lat/lon coordinates are known for a supraglacial lake.
+
+--------------------------------------------------------------------------------
+## Known Issues
+
+The "is2_sfc_find.m" routine is designed to refine a lake surface assignment in a manner resembling ATL06 surface heights. However, it struggles with lakes smaller than 500 m in diameter and interferes with the lake bed estimation. Therefore, it is not recommended to apply surface refinement at this time when running "manuatl.m". The "autoatl.m" script currently does not incorporate this routine.
+
+Very small (diameter < 200 m) and/or shallow (depth < 1 m) lakes may be difficult to resolve, especially with ICESat-2. In such cases, the photon cloud is often too noisy for the algorithm to notice the presence of a lake. 
 
 
+--------------------------------------------------------------------------------
+## Contact
+
+Have questions about the code? Contact Zachary Fair at zhfair@umich.edu.
+
+
+--------------------------------------------------------------------------------
+## Citation
+
+If using either algorithm, please cite using the following citation:
+
+Fair Z., Flanner, M., Brunt, K. M., Fricker, H. A., and Gardner, A. S.: Using ICESat-2 and Operation IceBridge altimetry for supraglacial lake depth retrievals, The Cryosphere Discuss.,  https://doi.org/10.5194/tc-2020-136, in review, 2020.
