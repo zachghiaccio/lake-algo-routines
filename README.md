@@ -1,10 +1,14 @@
 # lake-algo-routines
 
-This file provides a brief summary of each routine listed.
+A series of MATLAB routines designed to perform supraglacial lake depth retrievals with two laser altimeters: the Airborne Topographic Mapper (ATM) and the Ice, Cloud, and Land Elevation Satellite-2 (ICESat-2).
+
+MATLAB 2016a or newer is required, otherwise the routines will not run.
 
 --------------------------------------------------------------------------------
 ## ATM
-autoatm5.m - The "master" code for ATM lake depth retrieval. Runs through ILATM1B files one at a time.
+REQUIRED DATA - IceBridge ATM L1B Elevation and Return Strength (ILATM1B). The narrow-swath equivalent (ILNSA1B) is also valid. The ILATM1B "Q-Fit" product does NOT work for this routine.
+
+autoatm5.m - The "master" code for ATM lake depth retrieval. Currently accepts a list (in .txt format) of ILATM1B files, but it may be configured to accept one file.
 
 atm_windowing_sub.m - The "windowing" subroutine for ATM. Breaks an ILATM1B track into discrete windows.
 
@@ -14,6 +18,8 @@ atm_sfc_detect_sub.m - Uses the chunked data to find lake surfaces and lake beds
 
 --------------------------------------------------------------------------------
 ## ATL03
+REQUIRED DATA - ATL03 Geolocated Photon Data. The routine accepts both Version 002 and Version 003 data. 
+
 autoatl.m - The "master" algorithm for IS2 lake depth retrieval. Currently only accepts one ATL03 file per code execution.
 
 is2_class_merge.m - Condenses the "signal_conf_ph" parameter in ATL03 from [5 x N] to [1 x N], to remove dependence on surface type.
@@ -33,3 +39,5 @@ is2_polyfit_sub.m - Adds a 3rd-order polynomial curve to lake beds, to fill the 
 depth_refrac_fix.m - Corrects lake depth retrievals for the refractive index of water. See Parrish et al., (2019) for more details.
 
 manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine. Surface refinement is currently buggy, but the initial guess is sufficient for most cases.
+
+
