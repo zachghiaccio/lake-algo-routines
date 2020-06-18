@@ -73,8 +73,8 @@ before_lake = 1:lake_start-1;
 after_lake = lake_start+1:length(sfc);
 
 % Lake bottom approximation
-window_mean = movmean(sigx,1600,'omitnan');
-window_std = movstd(sigx,1600,'omitnan');
+window_mean = movmean(sigx,1000,'omitnan');
+window_std = movstd(sigx,1000,'omitnan');
 sig_btm = sigx;
 sig_btm(sig_btm>=window_mean-0.75*window_std) = NaN;
 sig_btm(sig_btm<=window_mean-1.8*window_std) = NaN;
