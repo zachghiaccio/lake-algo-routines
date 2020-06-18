@@ -41,6 +41,23 @@ depth_refrac_fix.m - Corrects lake depth retrievals for the refractive index of 
 manuatl.m - An alternative to "autoatl." If the coordinates of a lake are known, then this algorithm may be used for quicker analysis of singular lakes. Photon refinement is optional in this routine. Recommended if the lat/lon coordinates are known for a supraglacial lake.
 
 --------------------------------------------------------------------------------
+## Sample Data
+
+Users may download this data to quickly plot depths of lakes and ponds shown in Fair et al., (in review). The name convention
+is given by:
+
+xxxxx_pond_yyyy.txt
+  - xxxxx = General location of the pond. "amery" refers to the Amery Ice Shelf (Antarctica), and "jakob" refers to Jakobshavan  Isbrae (Greenland).
+  - yyyy = Approximate latitude of the pond. 
+  - Examples: amery_pond_7299 is located at -72.99 N on the Amery Ice Shelf. jakob_pond_6664 is located at 66.64 N near Jakobshavan Isbrae.
+  
+Data is given in a [N x 3] format, where Column 1 = Latitude (degrees N), Column 2 = Longitude (degrees E), and Column 3 = Lake/pond depth (meters).
+
+Users that download this data are asked to cite our study given the citation below.
+
+Currently a work in progress.
+
+--------------------------------------------------------------------------------
 ## Known Issues
 
 The "is2_sfc_find.m" routine is designed to refine a lake surface assignment in a manner resembling ATL06 surface heights. However, it struggles with lakes smaller than 500 m in diameter and interferes with the lake bed estimation. Therefore, it is not recommended to apply surface refinement at this time when running "manuatl.m". The "autoatl.m" script currently does not incorporate this routine.
