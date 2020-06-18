@@ -49,7 +49,7 @@ is given by:
 xxxxx_pond_yyyy.txt
   - xxxxx = General location of the pond. "amery" refers to the Amery Ice Shelf (Antarctica), and "jakob" refers to Jakobshavan  Isbrae (Greenland).
   - yyyy = Approximate latitude of the pond. 
-  - Examples: amery_pond_7299 is located at -72.99 N on the Amery Ice Shelf. jakob_pond_6664 is located at 66.64 N near Jakobshavan Isbrae.
+  - Examples: "amery_pond_7299" is located at -72.99 N on the Amery Ice Shelf. "jakob_pond_6664" is located at 66.64 N near Jakobshavan Isbrae.
   
 Data is given in a [N x 3] format, where Column 1 = Latitude (degrees N), Column 2 = Longitude (degrees E), and Column 3 = Lake/pond depth (meters).
 
