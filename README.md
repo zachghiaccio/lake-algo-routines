@@ -47,6 +47,7 @@ The "is2_sfc_find.m" routine is designed to refine a lake surface assignment in 
 
 Very small (diameter < 200 m) and/or shallow (depth < 1 m) lakes may be difficult to resolve, especially with ICESat-2. In such cases, the photon cloud is often too noisy for the algorithm to notice the presence of a lake. 
 
+The most recent version of the code was completed in October 2019. I have since moved on to other projects, so any future updates will be limited in scope. However, this project was envisioned as a proof-of-concept for lake depth retrievals, from which other researchers can refine and improve the technique. Therefore, users are welcomed to make changes and improvements to the code, provided they use the citation given below. 
 
 --------------------------------------------------------------------------------
 ## Contact
@@ -57,6 +58,6 @@ Have questions about the code? Contact Zachary Fair at zhfair@umich.edu.
 --------------------------------------------------------------------------------
 ## Citation
 
-If using either algorithm, please cite using the following citation:
+If using either algorithm, please cite using the following study:
 
 Fair Z., Flanner, M., Brunt, K. M., Fricker, H. A., and Gardner, A. S.: Using ICESat-2 and Operation IceBridge altimetry for supraglacial lake depth retrievals, The Cryosphere Discuss.,  https://doi.org/10.5194/tc-2020-136, in review, 2020.
