@@ -53,8 +53,6 @@ xxxxx_pond_yyyy.txt
   
 Data is given in a [N x 3] format, where Column 1 = Latitude (degrees N), Column 2 = Longitude (degrees E), and Column 3 = Lake/pond depth (meters).
 
-Users that download this data are asked to cite our study given the citation below.
-
 Currently a work in progress.
 
 --------------------------------------------------------------------------------
@@ -76,6 +74,6 @@ The most recent version of the code was completed in October 2019. I have since 
 --------------------------------------------------------------------------------
 ## Citation
 
-If using either algorithm, please cite using the following study:
+If using either algorithm or the sample data, please cite the following study:
 
 Fair Z., Flanner, M., Brunt, K. M., Fricker, H. A., and Gardner, A. S.: Using ICESat-2 and Operation IceBridge altimetry for supraglacial lake depth retrievals, The Cryosphere Discuss.,  https://doi.org/10.5194/tc-2020-136, in review, 2020.
