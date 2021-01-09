@@ -53,7 +53,7 @@ xxxxx_pond_yyyy.txt
   
 Data is given in a [N x 3] format, where Column 1 = Latitude (degrees N), Column 2 = Longitude (degrees E), and Column 3 = Lake/pond depth (meters).
 
-Currently a work in progress.
+All sample ICESat-2 data is available. The sample ATM data may be uploaded at a later date.
 
 --------------------------------------------------------------------------------
 ## Known Issues
