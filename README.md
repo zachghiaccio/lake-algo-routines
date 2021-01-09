@@ -32,7 +32,9 @@ is2_sfc_detect_sub.m - Uses the chunked data to find lake surfaces. An initial g
 
 is2_sfc_find.m - Gives a second guess for the location of a lake surface. Currently has issues with smaller lakes seen on Greenland.
 
-is2_ph_dist.m - Uses photon refinement procedures (see Smith et al., 2019 for more details) to improve lake bed estimation. 
+is2_ph_dist.m - Uses photon refinement procedures (see Smith et al., 2019 for more details) to improve lake bed estimation.
+
+is2_robust_spread.m - Determines the statistical distribution to ATL03 high confidence photons. Equivalent to the standard deviation if the photon distribution is a near-Gaussian.
 
 is2_polyfit_sub.m - Adds a 3rd-order polynomial curve to lake beds, to fill the gaps in attenuated regions. A separate subroutine was needed to account for multiple lakes in a scene.
 
