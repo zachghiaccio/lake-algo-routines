@@ -76,4 +76,4 @@ The most recent version of the code was completed in October 2019. I have since 
 
 If using either algorithm or the sample data, please cite the following study:
 
-Fair Z., Flanner, M., Brunt, K. M., Fricker, H. A., and Gardner, A. S.: Using ICESat-2 and Operation IceBridge altimetry for supraglacial lake depth retrievals, The Cryosphere Discuss.,  https://doi.org/10.5194/tc-2020-136, in review, 2020.
+Fair Z., Flanner, M., Brunt, K. M., Fricker, H. A., and Gardner, A. S.: Using ICESat-2 and Operation IceBridge altimetry for supraglacial lake depth retrievals, The Cryosphere, 14, 1-11 https://doi.org/10.5194/tc-2020-136, 2020.
